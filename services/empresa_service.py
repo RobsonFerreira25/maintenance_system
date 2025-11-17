@@ -3,6 +3,11 @@ SERVIÇOS DE EMPRESA - Gerencia tudo relacionado a empresas e filiais
 Aqui fica a LÓGICA DE NEGÓCIO para empresas
 '''
 
+import sys
+import os
+
+# Adiciona o diretório raiz do projeto ao Python Path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database.database import get_connection
 from database.models import Empresa, Filial, Endereco
@@ -194,11 +199,11 @@ class EnderecoService:
 if __name__ == "__main__":
     print("🧪 Testando Serviço de Empresas...")
     
-# Teste de criação de empresa
-EmpresaService.criar_empresa("12.345.678/0001-90", "Empresa Teste Ltda")
+    # Teste de criação de empresa
+    EmpresaService.criar_empresa("12.345.678/0001-90", "Empresa Teste Ltda")
 
-# Teste de Listagem
-empresas  = EmpresaService.listar_empresas()
-print(f"📊 Empresas cadastradas: {len(empresas)}")
-for emp in empresas:
-    print(f"  - {emp.razao_social} ({emp.cnpj})")
+    # Teste de Listagem
+    empresas  = EmpresaService.listar_empresas()
+    print(f"📊 Empresas cadastradas: {len(empresas)}")
+    for emp in empresas:
+        print(f"  - {emp.razao_social} ({emp.cnpj})")
