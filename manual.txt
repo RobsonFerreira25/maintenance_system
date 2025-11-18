@@ -1,0 +1,15 @@
+# 📄 MANUAL_DO_USUARIO.md
+# 🏭 MANUAL DO SISTEMA DE GESTÃO DE MANUTENÇÃO
+
+## 📋 VISÃO GERAL
+Sistema completo para gestão de manutenções, empresas, filiais e colaboradores.
+
+## 🚀 COMEÇAR
+
+### 1. Instalação
+```bash
+# Execute o script de instalação
+./install.sh
+
+# Ou manualmente:
+pip install -r requirements.txt

@@ -1,47 +1,32 @@
-# 📄 database/database.py (ATUALIZADO)
-#------------------------------------------------
-# Modulo de Acesso ao PostgreSQL
-# Sistema de Gestão de Manutenção - VERSÃO MELHORADA
-#------------------------------------------------
+# 📄 database/database.py (VERSÃO FINAL)
+"""
+MÓDULO DE ACESSO AO POSTGRESQL - VERSÃO FINAL
+Sistema de Gestão de Manutenção
+"""
 
 import psycopg2
-from psycopg2 import sql
-from dotenv import load_dotenv
-import os
-
-#------------------------------------------------
-# 1. Carregando variaveis de ambiente (.env)
-#------------------------------------------------
-load_dotenv()
-
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
-
-#------------------------------------------------
-# Função de conexão
-#------------------------------------------------
+from config.settings import DB_CONFIG
 
 def get_connection():
     '''
     Cria e retorna uma conexão com o PostgreSQL.
-    Esta Função será usada em todos os modulos do sistema.
+    Versão final com tratamento robusto de erros.
     '''
-    
     try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            host=DB_HOST,
-            port=DB_PORT
-        )
+        conn = psycopg2.connect(**DB_CONFIG)
+        print("✅ Conexão com PostgreSQL estabelecida com sucesso!")
         return conn
     
+    except psycopg2.OperationalError as e:
+        print(f"❌ Erro de conexão com o banco: {e}")
+        print("🔧 Verifique:")
+        print("   - Servidor PostgreSQL está rodando")
+        print("   - Credenciais no arquivo .env")
+        print("   - Banco de dados existe")
+        return None
+    
     except Exception as e:
-        print(f"Erro ao conectar ao Banco de Dados: {e}")
+        print(f"❌ Erro inesperado: {e}")
         return None
 
 #---------------------------------------------------------
