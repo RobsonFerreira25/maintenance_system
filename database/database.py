@@ -1,16 +1,28 @@
-# 📄 database/database.py (VERSÃO FINAL)
+# 📄 database/database.py (VERSÃO SIMPLIFICADA E CORRIGIDA)
 """
-MÓDULO DE ACESSO AO POSTGRESQL - VERSÃO FINAL
+MÓDULO DE ACESSO AO POSTGRESQL - VERSÃO SIMPLIFICADA
 Sistema de Gestão de Manutenção
 """
 
 import psycopg2
-from config.settings import DB_CONFIG
+import os
+from dotenv import load_dotenv
+
+# Carregar variáveis de ambiente
+load_dotenv()
+
+# Configurações do Banco de Dados
+DB_CONFIG = {
+    'dbname': os.getenv("DB_NAME", "gestao_manutencao"),
+    'user': os.getenv("DB_USER", "postgres"),
+    'password': os.getenv("DB_PASSWORD", "password"),
+    'host': os.getenv("DB_HOST", "localhost"),
+    'port': os.getenv("DB_PORT", "5432")
+}
 
 def get_connection():
     '''
     Cria e retorna uma conexão com o PostgreSQL.
-    Versão final com tratamento robusto de erros.
     '''
     try:
         conn = psycopg2.connect(**DB_CONFIG)
@@ -30,13 +42,13 @@ def get_connection():
         return None
 
 #---------------------------------------------------------
-# Função para criar todas as tabelas (VERSÃO MELHORADA)
+# Função para criar todas as tabelas (VERSÃO CORRIGIDA)
 #---------------------------------------------------------
 
 def create_tables():
     '''
     Cria todas as tabelas necessárias no sistema de manutenção
-    VERSÃO MELHORADA com as sugestões de robustez
+    VERSÃO CORRIGIDA - Adiciona campo FILIAL na tabela SOLICITACAO
     '''
     
     commands = [
@@ -97,7 +109,8 @@ def create_tables():
             STATUS VARCHAR(50),
             RESPONSAVEL VARCHAR(100),
             DESCRICAO TEXT,
-            DT_CONCLUSAO DATE
+            DT_CONCLUSAO DATE,
+            FILIAL VARCHAR(100)  -- NOVO CAMPO ADICIONADO
         );
         """,
 
@@ -246,6 +259,47 @@ def create_tables():
         conn.close()
 
 #-------------------------------------------------------
+# Função para adicionar coluna FILIAL se não existir
+#-------------------------------------------------------
+
+def atualizar_estrutura_solicitacao():
+    """
+    NOVA FUNÇÃO: Adiciona a coluna FILIAL na tabela SOLICITACAO se não existir
+    """
+    conn = get_connection()
+    if conn is None:
+        return False
+    
+    cur = conn.cursor()
+    
+    try:
+        # Verificar se a coluna FILIAL já existe
+        cur.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='solicitacao' and column_name='filial'
+        """)
+        
+        if not cur.fetchone():
+            # Adicionar a coluna FILIAL
+            cur.execute("ALTER TABLE SOLICITACAO ADD COLUMN FILIAL VARCHAR(100)")
+            conn.commit()
+            print("✅ Coluna FILIAL adicionada à tabela SOLICITACAO!")
+        else:
+            print("✅ Coluna FILIAL já existe na tabela SOLICITACAO")
+        
+        return True
+        
+    except Exception as e:
+        print(f"❌ Erro ao atualizar estrutura: {e}")
+        conn.rollback()
+        return False
+    
+    finally:
+        cur.close()
+        conn.close()
+
+#-------------------------------------------------------
 # Função para popular dados iniciais
 #-------------------------------------------------------
 
@@ -299,12 +353,14 @@ def popular_dados_iniciais():
         conn.close()
 
 #-------------------------------------------------------
-# Execução direta - CRIA O BANCO COMPLETO
+# Execução direta - ATUALIZA O BANCO COMPLETO
 #-------------------------------------------------------
 if __name__ == "__main__":
-    print("🏗️  Iniciando construção do banco de dados...")
+    print("🏗️  Iniciando construção/atualização do banco de dados...")
     
     if create_tables():
+        print("🔄 Atualizando estrutura da tabela SOLICITACAO...")
+        atualizar_estrutura_solicitacao()
         print("📊 Populando com dados iniciais...")
         popular_dados_iniciais()
         print("🎉 Sistema de banco de dados pronto para uso!")

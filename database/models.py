@@ -1,7 +1,7 @@
-# 📄 database/models.py
+# 📄 database/models.py (VERSÃO MELHORADA)
 """
 MODELS.PY - Definição das classes do sistema
-Aqui criamos 'representações' das tabelas em Python
+VERSÃO MELHORADA com novos campos
 """
 
 class Empresa:
@@ -49,7 +49,8 @@ class Colaborador:
         }
 
 class Solicitacao:
-    def __init__(self, n_solicitacao, dt_abertura, area, status, responsavel, descricao, dt_conclusao=None):
+    def __init__(self, n_solicitacao, dt_abertura, area, status, responsavel, descricao, 
+                 dt_conclusao=None, filial=None, nome_filial=None):
         self.n_solicitacao = n_solicitacao
         self.dt_abertura = dt_abertura
         self.area = area
@@ -57,6 +58,8 @@ class Solicitacao:
         self.responsavel = responsavel
         self.descricao = descricao
         self.dt_conclusao = dt_conclusao
+        self.filial = filial
+        self.nome_filial = nome_filial
     
     def to_dict(self):
         return {
@@ -66,5 +69,7 @@ class Solicitacao:
             'status': self.status,
             'responsavel': self.responsavel,
             'descricao': self.descricao,
-            'dt_conclusao': self.dt_conclusao
+            'dt_conclusao': self.dt_conclusao,
+            'filial': self.filial,
+            'nome_filial': self.nome_filial
         }

@@ -1,7 +1,7 @@
-# 📄 services/solicitacao_service.py (VERSÃO CORRIGIDA)
+# 📄 services/solicitacao_service.py (VERSÃO SIMPLIFICADA)
 """
 SERVIÇO DE SOLICITAÇÕES - O coração do sistema de manutenção
-VERSÃO CORRIGIDA - Problema de tipagem
+VERSÃO SIMPLIFICADA sem usar tabela FAZ por enquanto
 """
 
 from database.database import get_connection
@@ -12,27 +12,28 @@ class SolicitacaoService:
     """Serviço para gerenciar solicitações de manutenção"""
     
     @staticmethod
-    def criar_solicitacao(n_solicitacao, area, responsavel, descricao, status="Aberta"):
+    def criar_solicitacao(n_solicitacao, area, responsavel, descricao, filial=None, status="Aberta"):
         """
         Cria uma nova solicitação de manutenção
-        CORREÇÃO: Garantir tipos corretos
+        VERSÃO SIMPLIFICADA: Usa apenas campo FILIAL na tabela SOLICITACAO
         """
         conn = get_connection()
         if conn is None:
             return False
         
         try:
-            # CORREÇÃO: Garantir que número seja inteiro
+            # Garantir que número seja inteiro
             n_solicitacao_int = int(n_solicitacao)
             data_abertura = datetime.now().date()
             
             cur = conn.cursor()
             cur.execute(
                 """INSERT INTO SOLICITACAO 
-                (N_SOLICITACAO, DT_ABERTURA, AREA, STATUS, RESPONSAVEL, DESCRICAO) 
-                VALUES (%s, %s, %s, %s, %s, %s)""",
-                (n_solicitacao_int, data_abertura, area, status, responsavel, descricao)
+                (N_SOLICITACAO, DT_ABERTURA, AREA, STATUS, RESPONSAVEL, DESCRICAO, FILIAL) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                (n_solicitacao_int, data_abertura, area, status, responsavel, descricao, filial)
             )
+            
             conn.commit()
             print(f"✅ Solicitação #{n_solicitacao_int} criada com sucesso!")
             return True
@@ -49,18 +50,18 @@ class SolicitacaoService:
     def deletar_solicitacao(n_solicitacao):
         """
         Deleta uma solicitação pelo número
-        CORREÇÃO: Garantir tipo inteiro
         """
         conn = get_connection()
         if conn is None:
             return False
         
         try:
-            # CORREÇÃO: Garantir que número seja inteiro
+            # Garantir que número seja inteiro
             n_solicitacao_int = int(n_solicitacao)
             
             cur = conn.cursor()
             cur.execute("DELETE FROM SOLICITACAO WHERE N_SOLICITACAO = %s", (n_solicitacao_int,))
+            
             conn.commit()
             
             if cur.rowcount > 0:
@@ -82,6 +83,7 @@ class SolicitacaoService:
     def listar_solicitacoes():
         """
         Lista todas as solicitações
+        VERSÃO SIMPLIFICADA: Busca direto da tabela SOLICITACAO
         """
         conn = get_connection()
         if conn is None:
@@ -90,15 +92,32 @@ class SolicitacaoService:
         try:
             cur = conn.cursor()
             cur.execute("""
-                SELECT N_SOLICITACAO, DT_ABERTURA, AREA, STATUS, RESPONSAVEL, DESCRICAO, DT_CONCLUSAO 
+                SELECT N_SOLICITACAO, DT_ABERTURA, AREA, STATUS, 
+                       RESPONSAVEL, DESCRICAO, DT_CONCLUSAO, FILIAL
                 FROM SOLICITACAO 
                 ORDER BY DT_ABERTURA DESC
             """)
             
             solicitacoes = []
-            for n_solicitacao, dt_abertura, area, status, responsavel, descricao, dt_conclusao in cur.fetchall():
+            for (n_solicitacao, dt_abertura, area, status, responsavel, 
+                 descricao, dt_conclusao, filial) in cur.fetchall():
+                
+                # Buscar nome da filial se existir CNPJ
+                nome_filial = None
+                if filial:
+                    try:
+                        cur_filial = conn.cursor()
+                        cur_filial.execute("SELECT NOME FROM FILIAIS WHERE CNPJ_IND_ = %s", (filial,))
+                        resultado_filial = cur_filial.fetchone()
+                        if resultado_filial:
+                            nome_filial = resultado_filial[0]
+                        cur_filial.close()
+                    except:
+                        nome_filial = filial  # Usa o CNPJ se não encontrar nome
+                
                 solicitacoes.append(Solicitacao(
-                    n_solicitacao, dt_abertura, area, status, responsavel, descricao, dt_conclusao
+                    n_solicitacao, dt_abertura, area, status, responsavel, 
+                    descricao, dt_conclusao, filial, nome_filial
                 ))
             
             return solicitacoes
@@ -114,25 +133,28 @@ class SolicitacaoService:
     def atualizar_status_solicitacao(n_solicitacao, novo_status):
         """
         Atualiza o status de uma solicitação
-        CORREÇÃO: Garantir tipo inteiro
         """
         conn = get_connection()
         if conn is None:
             return False
         
         try:
-            # CORREÇÃO: Garantir que número seja inteiro
+            # Garantir que número seja inteiro
             n_solicitacao_int = int(n_solicitacao)
             
             cur = conn.cursor()
             
-            if novo_status.lower() == "concluída":
+            # Status que exigem data de conclusão
+            status_com_conclusao = ["concluída", "cancelada"]
+            
+            if novo_status.lower() in status_com_conclusao:
                 data_conclusao = datetime.now().date()
                 cur.execute(
                     "UPDATE SOLICITACAO SET STATUS = %s, DT_CONCLUSAO = %s WHERE N_SOLICITACAO = %s",
                     (novo_status, data_conclusao, n_solicitacao_int)
                 )
             else:
+                # Status que não tem data de conclusão
                 cur.execute(
                     "UPDATE SOLICITACAO SET STATUS = %s, DT_CONCLUSAO = NULL WHERE N_SOLICITACAO = %s",
                     (novo_status, n_solicitacao_int)
@@ -154,30 +176,82 @@ class SolicitacaoService:
     def buscar_solicitacao_por_numero(n_solicitacao):
         """
         Busca uma solicitação específica pelo número
-        CORREÇÃO: Garantir tipo inteiro
         """
         conn = get_connection()
         if conn is None:
             return None
         
         try:
-            # CORREÇÃO: Garantir que número seja inteiro
+            # Garantir que número seja inteiro
             n_solicitacao_int = int(n_solicitacao)
             
             cur = conn.cursor()
             cur.execute(
-                "SELECT N_SOLICITACAO, DT_ABERTURA, AREA, STATUS, RESPONSAVEL, DESCRICAO, DT_CONCLUSAO FROM SOLICITACAO WHERE N_SOLICITACAO = %s",
+                """SELECT N_SOLICITACAO, DT_ABERTURA, AREA, STATUS, 
+                          RESPONSAVEL, DESCRICAO, DT_CONCLUSAO, FILIAL
+                   FROM SOLICITACAO 
+                   WHERE N_SOLICITACAO = %s""",
                 (n_solicitacao_int,)
             )
             
             resultado = cur.fetchone()
             if resultado:
-                return Solicitacao(*resultado)
+                # Buscar nome da filial
+                nome_filial = None
+                if resultado[7]:  # FILIAL
+                    try:
+                        cur_filial = conn.cursor()
+                        cur_filial.execute("SELECT NOME FROM FILIAIS WHERE CNPJ_IND_ = %s", (resultado[7],))
+                        resultado_filial = cur_filial.fetchone()
+                        if resultado_filial:
+                            nome_filial = resultado_filial[0]
+                        cur_filial.close()
+                    except:
+                        nome_filial = resultado[7]
+                
+                return Solicitacao(*resultado[:7], resultado[7], nome_filial)
             return None
             
         except Exception as e:
             print(f"❌ Erro ao buscar solicitação: {e}")
             return None
+        finally:
+            cur.close()
+            conn.close()
+
+    @staticmethod
+    def obter_estatisticas_solicitacoes():
+        """
+        Retorna estatísticas detalhadas das solicitações
+        Para usar no dashboard
+        """
+        conn = get_connection()
+        if conn is None:
+            return {}
+        
+        try:
+            cur = conn.cursor()
+            
+            # Contagem por status
+            cur.execute("""
+                SELECT STATUS, COUNT(*) as quantidade 
+                FROM SOLICITACAO 
+                GROUP BY STATUS
+            """)
+            
+            estatisticas = {}
+            for status, quantidade in cur.fetchall():
+                estatisticas[status.lower()] = quantidade
+            
+            # Total geral
+            cur.execute("SELECT COUNT(*) FROM SOLICITACAO")
+            estatisticas['total'] = cur.fetchone()[0]
+            
+            return estatisticas
+            
+        except Exception as e:
+            print(f"❌ Erro ao obter estatísticas: {e}")
+            return {}
         finally:
             cur.close()
             conn.close()

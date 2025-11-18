@@ -1,7 +1,7 @@
-# 📄 interface/main_app.py (VERSÃO COM LISTAGEM DE FILIAIS)
+# 📄 interface/main_app.py (VERSÃO MELHORADA)
 """
 INTERFACE PRINCIPAL - Sistema de Gestão de Manutenção
-VERSÃO COM LISTAGEM COMPLETA DE EMPRESAS E FILIAIS
+VERSÃO COM MELHORIAS NA ABA DE SOLICITAÇÕES
 """
 
 import tkinter as tk
@@ -19,7 +19,7 @@ class SistemaManutencaoApp:
     def __init__(self, root):
         self.root = root
         self.root.title("🏭 Sistema de Gestão de Manutenção - O Arquiteto")
-        self.root.geometry("1300x800")  # Aumentei um pouco a largura
+        self.root.geometry("1300x800")
         self.root.configure(bg='#2C3E50')
         
         # Configurar estilo moderno
@@ -46,6 +46,8 @@ class SistemaManutencaoApp:
         style.configure('TLabel', background='#34495E', foreground='#ECF0F1')
         style.configure('TButton', background='#3498DB', foreground='white')
         style.configure('Delete.TButton', background='#E74C3C', foreground='white')
+        style.configure('Success.TButton', background='#2ECC71', foreground='white')
+        style.configure('Warning.TButton', background='#F39C12', foreground='white')
         style.configure('Header.TLabel', font=('Arial', 12, 'bold'))
     
     def criar_menu_superior(self):
@@ -285,7 +287,7 @@ class SistemaManutencaoApp:
         btn_deletar_colab.pack(side='left', padx=5)
     
     def criar_aba_solicitacoes(self):
-        """Cria a aba de gestão de solicitações de manutenção"""
+        """Cria a aba de gestão de solicitações de manutenção - VERSÃO MELHORADA"""
         frame_solicitacoes = ttk.Frame(self.notebook)
         self.notebook.add(frame_solicitacoes, text="📋 Solicitações")
         
@@ -293,55 +295,73 @@ class SistemaManutencaoApp:
         frame_cadastro = ttk.LabelFrame(frame_solicitacoes, text="Nova Solicitação", padding=10)
         frame_cadastro.pack(fill='x', padx=10, pady=5)
         
+        # Linha 1: Número e Área
         ttk.Label(frame_cadastro, text="Nº Solicitação:").grid(row=0, column=0, sticky='w', pady=2)
         self.entry_num_solic = ttk.Entry(frame_cadastro, width=15)
         self.entry_num_solic.grid(row=0, column=1, pady=2, padx=5)
         
-        ttk.Label(frame_cadastro, text="Área:").grid(row=1, column=0, sticky='w', pady=2)
+        ttk.Label(frame_cadastro, text="Área:").grid(row=0, column=2, sticky='w', pady=2, padx=(20,5))
         self.combo_area = ttk.Combobox(frame_cadastro, width=20, values=['Elétrica', 'Hidráulica', 'Civil', 'Serviços Gerais'])
-        self.combo_area.grid(row=1, column=1, pady=2, padx=5)
+        self.combo_area.grid(row=0, column=3, pady=2, padx=5)
         
-        # Combobox para responsáveis
-        ttk.Label(frame_cadastro, text="Responsável:").grid(row=2, column=0, sticky='w', pady=2)
-        self.combo_responsavel = ttk.Combobox(frame_cadastro, width=25)
-        self.combo_responsavel.grid(row=2, column=1, pady=2, padx=5)
+        # Linha 2: Responsável e Filial
+        ttk.Label(frame_cadastro, text="Responsável:").grid(row=1, column=0, sticky='w', pady=2)
+        self.combo_responsavel = ttk.Combobox(frame_cadastro, width=20)
+        self.combo_responsavel.grid(row=1, column=1, pady=2, padx=5)
         
-        # Botão para atualizar lista de responsáveis
+        ttk.Label(frame_cadastro, text="Filial:").grid(row=1, column=2, sticky='w', pady=2, padx=(20,5))
+        self.combo_filial = ttk.Combobox(frame_cadastro, width=20)
+        self.combo_filial.grid(row=1, column=3, pady=2, padx=5)
+        
+        # Botões para atualizar listas
+        frame_botoes_listas = ttk.Frame(frame_cadastro)
+        frame_botoes_listas.grid(row=2, column=0, columnspan=4, pady=5)
+        
         btn_atualizar_resp = ttk.Button(
-            frame_cadastro,
-            text="🔄 Atualizar Lista",
+            frame_botoes_listas,
+            text="🔄 Atualizar Responsáveis",
             command=self.carregar_responsaveis,
-            width=15
+            width=18
         )
-        btn_atualizar_resp.grid(row=2, column=2, padx=5)
+        btn_atualizar_resp.pack(side='left', padx=5)
         
+        btn_atualizar_filiais = ttk.Button(
+            frame_botoes_listas,
+            text="🔄 Atualizar Filiais",
+            command=self.carregar_filiais_combobox,
+            width=18
+        )
+        btn_atualizar_filiais.pack(side='left', padx=5)
+        
+        # Linha 3: Descrição
         ttk.Label(frame_cadastro, text="Descrição:").grid(row=3, column=0, sticky='nw', pady=2)
-        self.text_descricao = scrolledtext.ScrolledText(frame_cadastro, width=30, height=4)
-        self.text_descricao.grid(row=3, column=1, pady=2, padx=5)
+        self.text_descricao = scrolledtext.ScrolledText(frame_cadastro, width=50, height=4)
+        self.text_descricao.grid(row=3, column=1, columnspan=3, pady=2, padx=5, sticky='we')
         
+        # Linha 4: Botão criar
         btn_criar_solic = ttk.Button(
             frame_cadastro,
-            text="Criar Solicitação",
+            text="📝 Criar Solicitação",
             command=self.criar_solicitacao
         )
-        btn_criar_solic.grid(row=4, column=0, columnspan=2, pady=10)
+        btn_criar_solic.grid(row=4, column=0, columnspan=4, pady=10)
         
         # Frame de listagem e controle
         frame_controle = ttk.LabelFrame(frame_solicitacoes, text="Controle de Solicitações", padding=10)
         frame_controle.pack(fill='both', expand=True, padx=10, pady=5)
         
-        # Treeview para solicitações
-        colunas = ('Nº', 'Data', 'Área', 'Status', 'Responsável', 'Descrição')
+        # Treeview para solicitações - COLUNAS MELHORADAS
+        colunas = ('Nº', 'Data Abertura', 'Data Conclusão', 'Área', 'Status', 'Responsável', 'Filial', 'Descrição')
         self.tree_solicitacoes = ttk.Treeview(frame_controle, columns=colunas, show='headings', height=10)
         
-        larguras = [80, 100, 100, 100, 120, 200]
+        larguras = [70, 100, 100, 90, 100, 120, 120, 200]
         for i, col in enumerate(colunas):
             self.tree_solicitacoes.heading(col, text=col)
             self.tree_solicitacoes.column(col, width=larguras[i])
         
         self.tree_solicitacoes.pack(fill='both', expand=True)
         
-        # Frame de botões para controle
+        # Frame de botões para controle - MAIS BOTÕES DE STATUS
         frame_botoes = ttk.Frame(frame_controle)
         frame_botoes.pack(fill='x', pady=5)
         
@@ -350,32 +370,51 @@ class SistemaManutencaoApp:
             text="🔄 Atualizar Lista",
             command=self.carregar_solicitacoes
         )
-        btn_atualizar_solic.pack(side='left', padx=5)
+        btn_atualizar_solic.pack(side='left', padx=2)
         
-        btn_marcar_andamento = ttk.Button(
+        # Botões de status com cores
+        btn_status_aberta = ttk.Button(
             frame_botoes,
-            text="▶️ Em Andamento",
-            command=lambda: self.atualizar_status_solicitacao("Em Andamento")
+            text="🟢 Aberta",
+            command=lambda: self.atualizar_status_solicitacao("Aberta"),
+            style='Success.TButton'
         )
-        btn_marcar_andamento.pack(side='left', padx=5)
+        btn_status_aberta.pack(side='left', padx=2)
         
-        btn_marcar_concluida = ttk.Button(
+        btn_status_andamento = ttk.Button(
             frame_botoes,
-            text="✅ Concluída",
-            command=lambda: self.atualizar_status_solicitacao("Concluída")
+            text="🟡 Em Andamento",
+            command=lambda: self.atualizar_status_solicitacao("Em Andamento"),
+            style='Warning.TButton'
         )
-        btn_marcar_concluida.pack(side='left', padx=5)
+        btn_status_andamento.pack(side='left', padx=2)
+        
+        btn_status_concluida = ttk.Button(
+            frame_botoes,
+            text="🔵 Concluída",
+            command=lambda: self.atualizar_status_solicitacao("Concluída"),
+            style='TButton'
+        )
+        btn_status_concluida.pack(side='left', padx=2)
+        
+        btn_status_cancelada = ttk.Button(
+            frame_botoes,
+            text="🔴 Cancelada",
+            command=lambda: self.atualizar_status_solicitacao("Cancelada"),
+            style='Delete.TButton'
+        )
+        btn_status_cancelada.pack(side='left', padx=2)
         
         btn_deletar_solic = ttk.Button(
             frame_botoes,
-            text="🗑️ Deletar Solicitação",
+            text="🗑️ Deletar",
             command=self.deletar_solicitacao,
             style='Delete.TButton'
         )
-        btn_deletar_solic.pack(side='left', padx=5)
+        btn_deletar_solic.pack(side='left', padx=2)
     
     def criar_aba_dashboard(self):
-        """Cria a aba de dashboard com resumo do sistema"""
+        """Cria a aba de dashboard com resumo do sistema - VERSÃO MELHORADA"""
         frame_dashboard = ttk.Frame(self.notebook)
         self.notebook.add(frame_dashboard, text="📊 Dashboard")
         
@@ -386,15 +425,23 @@ class SistemaManutencaoApp:
         # Criar labels para estatísticas
         self.label_total_empresas = ttk.Label(
             frame_stats, 
-            text="Empresas: Carregando...",
+            text="🏢 Empresas: Carregando...",
             font=('Arial', 11, 'bold'),
             foreground='#3498DB'
         )
         self.label_total_empresas.pack(anchor='w', pady=2)
         
+        self.label_total_filiais = ttk.Label(
+            frame_stats,
+            text="🏪 Filiais: Carregando...",
+            font=('Arial', 11, 'bold'),
+            foreground='#9B59B6'
+        )
+        self.label_total_filiais.pack(anchor='w', pady=2)
+        
         self.label_total_colaboradores = ttk.Label(
             frame_stats,
-            text="Colaboradores: Carregando...",
+            text="👥 Colaboradores: Carregando...",
             font=('Arial', 11, 'bold'),
             foreground='#2ECC71'
         )
@@ -402,28 +449,44 @@ class SistemaManutencaoApp:
         
         self.label_total_solicitacoes = ttk.Label(
             frame_stats,
-            text="Solicitações: Carregando...",
+            text="📋 Total Solicitações: Carregando...",
             font=('Arial', 11, 'bold'),
             foreground='#E74C3C'
         )
         self.label_total_solicitacoes.pack(anchor='w', pady=2)
         
+        # NOVO: Estatísticas detalhadas de solicitações
         self.label_solicitacoes_abertas = ttk.Label(
             frame_stats,
-            text="Solicitações Abertas: Carregando...",
-            font=('Arial', 11, 'bold'),
+            text="🟢 Abertas: Carregando...",
+            font=('Arial', 10, 'bold'),
+            foreground='#2ECC71'
+        )
+        self.label_solicitacoes_abertas.pack(anchor='w', pady=1)
+        
+        self.label_solicitacoes_andamento = ttk.Label(
+            frame_stats,
+            text="🟡 Em Andamento: Carregando...",
+            font=('Arial', 10, 'bold'),
             foreground='#F39C12'
         )
-        self.label_solicitacoes_abertas.pack(anchor='w', pady=2)
+        self.label_solicitacoes_andamento.pack(anchor='w', pady=1)
         
-        # NOVO: Estatística de filiais
-        self.label_total_filiais = ttk.Label(
+        self.label_solicitacoes_concluidas = ttk.Label(
             frame_stats,
-            text="Filiais: Carregando...",
-            font=('Arial', 11, 'bold'),
-            foreground='#9B59B6'
+            text="🔵 Concluídas: Carregando...",
+            font=('Arial', 10, 'bold'),
+            foreground='#3498DB'
         )
-        self.label_total_filiais.pack(anchor='w', pady=2)
+        self.label_solicitacoes_concluidas.pack(anchor='w', pady=1)
+        
+        self.label_solicitacoes_canceladas = ttk.Label(
+            frame_stats,
+            text="🔴 Canceladas: Carregando...",
+            font=('Arial', 10, 'bold'),
+            foreground='#E74C3C'
+        )
+        self.label_solicitacoes_canceladas.pack(anchor='w', pady=1)
         
         # Botão atualizar dashboard
         btn_atualizar_dash = ttk.Button(
@@ -437,12 +500,13 @@ class SistemaManutencaoApp:
         frame_ultimas = ttk.LabelFrame(frame_dashboard, text="Últimas Solicitações", padding=10)
         frame_ultimas.pack(fill='both', expand=True, padx=10, pady=5)
         
-        colunas = ('Nº', 'Data', 'Área', 'Status')
+        colunas = ('Nº', 'Data', 'Área', 'Status', 'Filial')
         self.tree_ultimas_solic = ttk.Treeview(frame_ultimas, columns=colunas, show='headings', height=8)
         
-        for col in colunas:
+        larguras_ultimas = [80, 100, 100, 100, 120]
+        for i, col in enumerate(colunas):
             self.tree_ultimas_solic.heading(col, text=col)
-            self.tree_ultimas_solic.column(col, width=120)
+            self.tree_ultimas_solic.column(col, width=larguras_ultimas[i])
         
         self.tree_ultimas_solic.pack(fill='both', expand=True)
     
@@ -451,10 +515,11 @@ class SistemaManutencaoApp:
     def carregar_dados_iniciais(self):
         """Carrega dados iniciais na interface"""
         self.carregar_empresas()
-        self.carregar_filiais()  # NOVO: Carrega filiais também
+        self.carregar_filiais()
         self.carregar_colaboradores()
         self.carregar_solicitacoes()
         self.carregar_responsaveis()
+        self.carregar_filiais_combobox()  # NOVO: Carrega filiais no combobox
         self.atualizar_dashboard()
     
     def carregar_responsaveis(self):
@@ -473,6 +538,24 @@ class SistemaManutencaoApp:
         except Exception as e:
             print(f"❌ Erro ao carregar responsáveis: {e}")
             messagebox.showwarning("Atenção", "Erro ao carregar lista de responsáveis")
+    
+    def carregar_filiais_combobox(self):
+        """NOVO: Carrega a lista de filiais no combobox"""
+        try:
+            filiais = EmpresaService.listar_filiais()
+            nomes_filiais = [filial.nome for filial in filiais]
+            self.combo_filial['values'] = nomes_filiais
+            
+            if nomes_filiais:
+                self.combo_filial.set(nomes_filiais[0])
+                print(f"✅ {len(nomes_filiais)} filiais carregadas no combobox")
+            else:
+                self.combo_filial.set('')
+                print("ℹ️ Nenhuma filial cadastrada ainda")
+                
+        except Exception as e:
+            print(f"❌ Erro ao carregar filiais: {e}")
+            messagebox.showwarning("Atenção", "Erro ao carregar lista de filiais")
     
     # ========== MÉTODOS DE CADASTRO ==========
     
@@ -503,7 +586,8 @@ class SistemaManutencaoApp:
         if EmpresaService.criar_filial(cnpj_ind, nome):
             self.entry_cnpj_filial.delete(0, tk.END)
             self.entry_nome_filial.delete(0, tk.END)
-            self.carregar_filiais()  # NOVO: Atualiza lista de filiais
+            self.carregar_filiais()
+            self.carregar_filiais_combobox()  # NOVO: Atualiza combobox
             self.atualizar_dashboard()
     
     def cadastrar_colaborador(self):
@@ -529,15 +613,16 @@ class SistemaManutencaoApp:
             messagebox.showerror("Erro", "Matrícula deve ser um número!")
     
     def criar_solicitacao(self):
-        """Cria uma nova solicitação"""
+        """Cria uma nova solicitação - VERSÃO MELHORADA"""
         try:
             n_solicitacao = int(self.entry_num_solic.get().strip())
             area = self.combo_area.get().strip()
             responsavel = self.combo_responsavel.get().strip()
+            filial_nome = self.combo_filial.get().strip()
             descricao = self.text_descricao.get('1.0', tk.END).strip()
             
             if not all([n_solicitacao, area, responsavel, descricao]):
-                messagebox.showwarning("Atenção", "Por favor, preencha todos os campos!")
+                messagebox.showwarning("Atenção", "Por favor, preencha todos os campos obrigatórios!")
                 return
             
             # Verifica se o responsável existe na lista
@@ -546,10 +631,20 @@ class SistemaManutencaoApp:
                 messagebox.showerror("Erro", "Por favor, selecione um responsável válido da lista!")
                 return
             
-            if SolicitacaoService.criar_solicitacao(n_solicitacao, area, responsavel, descricao):
+            # Buscar CNPJ da filial selecionada
+            filial_cnpj = None
+            if filial_nome:
+                filiais = EmpresaService.listar_filiais()
+                for filial in filiais:
+                    if filial.nome == filial_nome:
+                        filial_cnpj = filial.cnpj_ind
+                        break
+            
+            if SolicitacaoService.criar_solicitacao(n_solicitacao, area, responsavel, descricao, filial_cnpj):
                 self.entry_num_solic.delete(0, tk.END)
                 self.combo_area.set('')
                 self.combo_responsavel.set('')
+                self.combo_filial.set('')
                 self.text_descricao.delete('1.0', tk.END)
                 self.carregar_solicitacoes()
                 self.atualizar_dashboard()
@@ -569,7 +664,7 @@ class SistemaManutencaoApp:
             self.tree_empresas.insert('', 'end', values=(empresa.cnpj, empresa.razao_social))
     
     def carregar_filiais(self):
-        """NOVO: Carrega a lista de filiais no treeview"""
+        """Carrega a lista de filiais no treeview"""
         for item in self.tree_filiais.get_children():
             self.tree_filiais.delete(item)
         
@@ -587,19 +682,27 @@ class SistemaManutencaoApp:
             self.tree_colaboradores.insert('', 'end', values=(colab.matricula, colab.nome, colab.cargo))
     
     def carregar_solicitacoes(self):
-        """Carrega a lista de solicitações"""
+        """Carrega a lista de solicitações - VERSÃO MELHORADA"""
         for item in self.tree_solicitacoes.get_children():
             self.tree_solicitacoes.delete(item)
         
         solicitacoes = SolicitacaoService.listar_solicitacoes()
         for sol in solicitacoes:
-            # Data formatada com verificação segura
-            data_formatada = ""
+            # Data de abertura formatada
+            data_abertura = ""
             if sol.dt_abertura:
                 if hasattr(sol.dt_abertura, 'strftime'):
-                    data_formatada = sol.dt_abertura.strftime('%d/%m/%Y')
+                    data_abertura = sol.dt_abertura.strftime('%d/%m/%Y')
                 else:
-                    data_formatada = str(sol.dt_abertura)
+                    data_abertura = str(sol.dt_abertura)
+            
+            # Data de conclusão formatada
+            data_conclusao = ""
+            if sol.dt_conclusao:
+                if hasattr(sol.dt_conclusao, 'strftime'):
+                    data_conclusao = sol.dt_conclusao.strftime('%d/%m/%Y')
+                else:
+                    data_conclusao = str(sol.dt_conclusao)
             
             # Descrição com verificação segura para None
             descricao_exibicao = ""
@@ -611,12 +714,17 @@ class SistemaManutencaoApp:
             else:
                 descricao_exibicao = "Sem descrição"
             
+            # Nome da filial (usa nome_filial se disponível, senão usa filial)
+            nome_filial = sol.nome_filial if sol.nome_filial else (sol.filial if sol.filial else "Não informada")
+            
             self.tree_solicitacoes.insert('', 'end', values=(
                 str(sol.n_solicitacao) if sol.n_solicitacao else "",
-                data_formatada,
+                data_abertura,
+                data_conclusao,
                 str(sol.area) if sol.area else "",
                 str(sol.status) if sol.status else "",
                 str(sol.responsavel) if sol.responsavel else "",
+                nome_filial,
                 descricao_exibicao
             ))
     
@@ -633,7 +741,6 @@ class SistemaManutencaoApp:
         cnpj = self.tree_empresas.item(item)['values'][0]
         razao_social = self.tree_empresas.item(item)['values'][1]
         
-        # Confirmação antes de deletar
         confirmacao = messagebox.askyesno(
             "Confirmar Deleção", 
             f"Tem certeza que deseja deletar a empresa:\n\n{razao_social}\nCNPJ: {cnpj}\n\nEsta ação não pode ser desfeita!"
@@ -648,7 +755,7 @@ class SistemaManutencaoApp:
                 messagebox.showerror("Erro", "Erro ao deletar empresa. Verifique se não há registros vinculados.")
     
     def deletar_filial(self):
-        """NOVO: Deleta a filial selecionada"""
+        """Deleta a filial selecionada"""
         selecionado = self.tree_filiais.selection()
         if not selecionado:
             messagebox.showwarning("Atenção", "Por favor, selecione uma filial para deletar!")
@@ -658,7 +765,6 @@ class SistemaManutencaoApp:
         cnpj_ind = self.tree_filiais.item(item)['values'][0]
         nome_filial = self.tree_filiais.item(item)['values'][1]
         
-        # Confirmação antes de deletar
         confirmacao = messagebox.askyesno(
             "Confirmar Deleção", 
             f"Tem certeza que deseja deletar a filial:\n\n{nome_filial}\nCNPJ: {cnpj_ind}\n\nEsta ação não pode ser desfeita!"
@@ -668,6 +774,7 @@ class SistemaManutencaoApp:
             if EmpresaService.deletar_filial(cnpj_ind):
                 messagebox.showinfo("Sucesso", "Filial deletada com sucesso!")
                 self.carregar_filiais()
+                self.carregar_filiais_combobox()
                 self.atualizar_dashboard()
             else:
                 messagebox.showerror("Erro", "Erro ao deletar filial. Verifique se não há registros vinculados.")
@@ -683,7 +790,6 @@ class SistemaManutencaoApp:
         matricula = self.tree_colaboradores.item(item)['values'][0]
         nome = self.tree_colaboradores.item(item)['values'][1]
         
-        # Confirmação antes de deletar
         confirmacao = messagebox.askyesno(
             "Confirmar Deleção", 
             f"Tem certeza que deseja deletar o colaborador:\n\n{nome}\nMatrícula: {matricula}\n\nEsta ação não pode ser desfeita!"
@@ -707,9 +813,8 @@ class SistemaManutencaoApp:
         
         item = selecionado[0]
         n_solicitacao = self.tree_solicitacoes.item(item)['values'][0]
-        descricao = self.tree_solicitacoes.item(item)['values'][5]
+        descricao = self.tree_solicitacoes.item(item)['values'][7]
         
-        # Confirmação antes de deletar
         confirmacao = messagebox.askyesno(
             "Confirmar Deleção", 
             f"Tem certeza que deseja deletar a solicitação:\n\n#{n_solicitacao}\nDescrição: {descricao}\n\nEsta ação não pode ser desfeita!"
@@ -736,36 +841,39 @@ class SistemaManutencaoApp:
         n_solicitacao = self.tree_solicitacoes.item(item)['values'][0]
         
         if SolicitacaoService.atualizar_status_solicitacao(n_solicitacao, novo_status):
+            messagebox.showinfo("Sucesso", f"Status atualizado para: {novo_status}")
             self.carregar_solicitacoes()
             self.atualizar_dashboard()
     
     def atualizar_dashboard(self):
-        """Atualiza as informações do dashboard - VERSÃO ATUALIZADA"""
+        """Atualiza as informações do dashboard - VERSÃO MELHORADA"""
         try:
             # Estatísticas básicas
             empresas = EmpresaService.listar_empresas() or []
-            filiais = EmpresaService.listar_filiais() or []  # NOVO: Estatística de filiais
+            filiais = EmpresaService.listar_filiais() or []
             colaboradores = ColaboradorService.listar_colaboradores() or []
             solicitacoes = SolicitacaoService.listar_solicitacoes() or []
             
-            # Contar solicitações abertas com verificação segura
-            abertas = 0
-            for sol in solicitacoes:
-                if sol.status and sol.status.lower() in ['aberta', 'em andamento']:
-                    abertas += 1
+            # Estatísticas detalhadas das solicitações
+            estatisticas = SolicitacaoService.obter_estatisticas_solicitacoes()
             
-            # Atualizar labels
+            # Atualizar labels principais
             self.label_total_empresas.config(text=f"🏢 Empresas: {len(empresas)}")
-            self.label_total_filiais.config(text=f"🏪 Filiais: {len(filiais)}")  # NOVO: Label de filiais
+            self.label_total_filiais.config(text=f"🏪 Filiais: {len(filiais)}")
             self.label_total_colaboradores.config(text=f"👥 Colaboradores: {len(colaboradores)}")
             self.label_total_solicitacoes.config(text=f"📋 Total Solicitações: {len(solicitacoes)}")
-            self.label_solicitacoes_abertas.config(text=f"⚠️ Solicitações Abertas: {abertas}")
+            
+            # Atualizar estatísticas detalhadas de solicitações
+            self.label_solicitacoes_abertas.config(text=f"🟢 Abertas: {estatisticas.get('aberta', 0)}")
+            self.label_solicitacoes_andamento.config(text=f"🟡 Em Andamento: {estatisticas.get('em andamento', 0)}")
+            self.label_solicitacoes_concluidas.config(text=f"🔵 Concluídas: {estatisticas.get('concluída', 0)}")
+            self.label_solicitacoes_canceladas.config(text=f"🔴 Canceladas: {estatisticas.get('cancelada', 0)}")
             
             # Atualizar últimas solicitações
             for item in self.tree_ultimas_solic.get_children():
                 self.tree_ultimas_solic.delete(item)
             
-            ultimas = solicitacoes[:5]
+            ultimas = solicitacoes[:8]  # 8 mais recentes
             for sol in ultimas:
                 # Data formatada com verificação segura
                 data_formatada = ""
@@ -775,11 +883,15 @@ class SistemaManutencaoApp:
                     else:
                         data_formatada = str(sol.dt_abertura)
                 
+                # Nome da filial
+                nome_filial = sol.nome_filial if sol.nome_filial else (sol.filial if sol.filial else "Não informada")
+                
                 self.tree_ultimas_solic.insert('', 'end', values=(
                     str(sol.n_solicitacao) if sol.n_solicitacao else "",
                     data_formatada,
                     str(sol.area) if sol.area else "",
-                    str(sol.status) if sol.status else ""
+                    str(sol.status) if sol.status else "",
+                    nome_filial
                 ))
                 
         except Exception as e:
