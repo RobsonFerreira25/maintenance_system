@@ -4,7 +4,7 @@ SERVIÇO DE SOLICITAÇÕES - O coração do sistema de manutenção
 VERSÃO COM NÚMERO AUTOMÁTICO E FUNÇÕES DE RELATÓRIO
 """
 
-from database.database import get_connection
+from database.database import get_connection, DatabaseConnection
 from database.models import Solicitacao
 from datetime import datetime
 
@@ -83,34 +83,30 @@ class SolicitacaoService:
     def deletar_solicitacao(n_solicitacao):
         """
         Deleta uma solicitação pelo número
+        VERSÃO CORRIGIDA: Usa context manager
         """
-        conn = get_connection()
-        if conn is None:
-            return False
-        
         try:
             # Garantir que número seja inteiro
             n_solicitacao_int = int(n_solicitacao)
             
-            cur = conn.cursor()
-            cur.execute("DELETE FROM SOLICITACAO WHERE N_SOLICITACAO = %s", (n_solicitacao_int,))
-            
-            conn.commit()
-            
-            if cur.rowcount > 0:
-                print(f"✅ Solicitação #{n_solicitacao_int} deletada com sucesso!")
-                return True
-            else:
-                print(f"⚠️ Solicitação #{n_solicitacao_int} não encontrada")
-                return False
+            with DatabaseConnection() as conn:
+                if conn is None:
+                    return False
                 
+                cur = conn.cursor()
+                cur.execute("DELETE FROM SOLICITACAO WHERE N_SOLICITACAO = %s", (n_solicitacao_int,))
+                conn.commit()
+                
+                if cur.rowcount > 0:
+                    print(f"✅ Solicitação #{n_solicitacao_int} deletada com sucesso!")
+                    return True
+                else:
+                    print(f"⚠️ Solicitação #{n_solicitacao_int} não encontrada")
+                    return False
+                    
         except Exception as e:
             print(f"❌ Erro ao deletar solicitação: {e}")
-            conn.rollback()
             return False
-        finally:
-            cur.close()
-            conn.close()
     
     @staticmethod
     def listar_solicitacoes():

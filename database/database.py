@@ -355,6 +355,107 @@ def popular_dados_iniciais():
 #-------------------------------------------------------
 # Execução direta - ATUALIZA O BANCO COMPLETO
 #-------------------------------------------------------
+
+class DatabaseConnection:
+    """
+    Context manager para gerenciar conexões com o banco de dados
+    VERSÃO CORRIGIDA: Melhor tratamento de exceções
+    """
+    
+    def __enter__(self):
+        """Abre a conexão quando entra no contexto"""
+        self.conn = get_connection()
+        return self.conn
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Fecha a conexão quando sai do contexto
+        CORREÇÃO: Não tenta fazer rollback se conexão já fechada
+        """
+        if self.conn:
+            try:
+                # Se houve exceção, tenta rollback primeiro
+                if exc_type is not None:
+                    self.conn.rollback()
+                    print("🔄 Rollback executado devido a exceção")
+            except Exception as rollback_error:
+                print(f"⚠️ Erro no rollback (pode ser normal): {rollback_error}")
+            finally:
+                # Sempre fecha a conexão
+                self.conn.close()
+                print("✅ Conexão fechada automaticamente")
+
+def executar_query(query, params=None):
+    """
+    Função utilitária para executar queries com context manager
+    """
+    with DatabaseConnection() as conn:
+        if conn is None:
+            return None
+        try:
+            cur = conn.cursor()
+            cur.execute(query, params or ())
+            
+            # Se for SELECT, retorna resultados
+            if query.strip().upper().startswith('SELECT'):
+                resultados = cur.fetchall()
+                colunas = [desc[0] for desc in cur.description]
+                return resultados, colunas
+            else:
+                # Para INSERT/UPDATE/DELETE, retorna rowcount
+                conn.commit()
+                return cur.rowcount
+                
+        except Exception as e:
+            conn.rollback()
+            print(f"❌ Erro na query: {e}")
+            raise e
+
+def criar_indices():
+    """
+    Cria índices para melhorar performance das queries
+    """
+    commands = [
+        # Índices para tabela SOLICITACAO (mais usada)
+        "CREATE INDEX IF NOT EXISTS idx_solicitacao_status ON SOLICITACAO(STATUS)",
+        "CREATE INDEX IF NOT EXISTS idx_solicitacao_data_abertura ON SOLICITACAO(DT_ABERTURA)",
+        "CREATE INDEX IF NOT EXISTS idx_solicitacao_area ON SOLICITACAO(AREA)",
+        "CREATE INDEX IF NOT EXISTS idx_solicitacao_responsavel ON SOLICITACAO(RESPONSAVEL)",
+        
+        # Índices para tabela COLABORADORES
+        "CREATE INDEX IF NOT EXISTS idx_colaboradores_nome ON COLABORADORES(NOME)",
+        "CREATE INDEX IF NOT EXISTS idx_colaboradores_cargo ON COLABORADORES(CARGO)",
+        
+        # Índices para tabela FILIAIS
+        "CREATE INDEX IF NOT EXISTS idx_filiais_nome ON FILIAIS(NOME)",
+        
+        # Índices para tabela EMPRESA
+        "CREATE INDEX IF NOT EXISTS idx_empresa_razao_social ON EMPRESA(RAZAO_SOCIAL)",
+        
+        # Índices para relações frequentes
+        "CREATE INDEX IF NOT EXISTS idx_possui_colab_apt_matricula ON POSSUI_COLABORADOR_APTIDAO(FK_COLABORADORES_MATRICULA)",
+        "CREATE INDEX IF NOT EXISTS idx_faz_filial ON FAZ(FK_FILIAIS_CNPJ_IND_)"
+    ]
+    
+    with DatabaseConnection() as conn:
+        if conn is None:
+            return False
+        
+        cur = conn.cursor()
+        
+        try:
+            for command in commands:
+                cur.execute(command)
+            
+            conn.commit()
+            print("✅ Índices criados/atualizados com sucesso!")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Erro ao criar índices: {e}")
+            conn.rollback()
+            return False
+
 if __name__ == "__main__":
     print("🏗️  Iniciando construção/atualização do banco de dados...")
     
@@ -363,6 +464,8 @@ if __name__ == "__main__":
         atualizar_estrutura_solicitacao()
         print("📊 Populando com dados iniciais...")
         popular_dados_iniciais()
+        print("🚀 Criando índices para performance...")
+        criar_indices()  # ← LINHA NOVA
         print("🎉 Sistema de banco de dados pronto para uso!")
     else:
         print("❌ Falha na criação do banco de dados")

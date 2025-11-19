@@ -20,7 +20,7 @@ class SistemaManutencaoApp:
     def __init__(self, root):
         self.root = root
         self.root.title("🏭 Sistema de Gestão de Manutenção - O Arquiteto")
-        self.root.geometry("1300x800")
+        self.root.geometry("1920x1080")
         self.root.configure(bg='#2C3E50')
         
         # Configurar estilo moderno

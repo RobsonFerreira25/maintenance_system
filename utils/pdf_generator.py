@@ -1,7 +1,7 @@
 # 📄 utils/pdf_generator.py
 """
-GERADOR DE PDF PARA ORDENS DE SERVIÇO
-Sistema profissional de impressão de OS
+GERADOR DE PDF PARA ORDENS DE SERVIÇO - MODELO PROFISSIONAL
+Baseado no layout fornecido: modelo de os pdf.pdf
 """
 
 import os
@@ -9,6 +9,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from datetime import datetime
@@ -16,12 +17,12 @@ import tkinter as tk
 from tkinter import messagebox
 
 class PDFGenerator:
-    """Classe para geração de PDFs profissionais"""
+    """Classe para geração de PDFs no modelo profissional"""
     
     @staticmethod
     def gerar_os_pdf(solicitacao, caminho_arquivo=None):
         """
-        Gera um PDF profissional da Ordem de Serviço
+        Gera um PDF profissional da Ordem de Serviço no modelo especificado
         """
         try:
             # Criar pasta de relatórios se não existir
@@ -37,122 +38,260 @@ class PDFGenerator:
             doc = SimpleDocTemplate(
                 caminho_arquivo,
                 pagesize=A4,
-                rightMargin=72,
-                leftMargin=72,
-                topMargin=72,
-                bottomMargin=18
+                rightMargin=20*mm,
+                leftMargin=20*mm,
+                topMargin=15*mm,
+                bottomMargin=15*mm
             )
             
             # Elementos do documento
             elements = []
             
-            # Estilos
+            # Estilos personalizados
             styles = getSampleStyleSheet()
-            estilo_titulo = ParagraphStyle(
-                'CustomTitle',
-                parent=styles['Heading1'],
-                fontSize=16,
-                spaceAfter=30,
-                alignment=1,  # Centralizado
-                textColor=colors.HexColor('#2C3E50')
-            )
             
-            estilo_subtitulo = ParagraphStyle(
-                'CustomSubtitle',
-                parent=styles['Heading2'],
-                fontSize=12,
-                spaceAfter=12,
-                textColor=colors.HexColor('#34495E')
-            )
-            
-            estilo_normal = ParagraphStyle(
-                'CustomNormal',
+            # ========== CABEÇALHO COM Nº DA O.S ==========
+            estilo_numero_os = ParagraphStyle(
+                'NumeroOS',
                 parent=styles['Normal'],
-                fontSize=10,
-                spaceAfter=6
+                fontSize=16,
+                textColor=colors.black,
+                alignment=1,  # Centralizado
+                spaceAfter=20,
+                fontName='Helvetica-Bold'
             )
             
-            # Título
-            titulo = Paragraph("ORDEM DE SERVIÇO - MANUTENÇÃO", estilo_titulo)
-            elements.append(titulo)
-            elements.append(Spacer(1, 20))
+            numero_os = Paragraph(f"Nº O.S<br/>{solicitacao.n_solicitacao}", estilo_numero_os)
+            elements.append(numero_os)
             
-            # Informações da OS
-            dados_os = [
-                ["Nº DA OS:", str(solicitacao.n_solicitacao)],
-                ["DATA ABERTURA:", solicitacao.dt_abertura.strftime('%d/%m/%Y') if solicitacao.dt_abertura else "N/A"],
-                ["STATUS:", solicitacao.status if solicitacao.status else "N/A"],
-                ["ÁREA:", solicitacao.area if solicitacao.area else "N/A"],
-                ["RESPONSÁVEL:", solicitacao.responsavel if solicitacao.responsavel else "N/A"],
-                ["FILIAL:", solicitacao.nome_filial if solicitacao.nome_filial else "Não informada"]
+            # ========== TÍTULO PRINCIPAL ==========
+            estilo_titulo = ParagraphStyle(
+                'TituloPrincipal',
+                parent=styles['Normal'],
+                fontSize=14,
+                textColor=colors.black,
+                alignment=1,  # Centralizado
+                spaceAfter=25,
+                fontName='Helvetica-Bold'
+            )
+            
+            titulo = Paragraph("ORDEM DE SERVIÇO DE MANUTENÇÃO", estilo_titulo)
+            elements.append(titulo)
+            
+            # ========== CLASSIFICAÇÃO DA O.S ==========
+            dados_classificacao = [
+                ["Classificação da O.S", "Nível", "Grupo Economico", "Filial"],
+                ["", "II - Urgente", "ADM", solicitacao.nome_filial if solicitacao.nome_filial else "Não informada"]
             ]
             
-            if solicitacao.dt_conclusao:
-                dados_os.append(["DATA CONCLUSÃO:", solicitacao.dt_conclusao.strftime('%d/%m/%Y')])
-            
-            tabela_os = Table(dados_os, colWidths=[150, 300])
-            tabela_os.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#3498DB')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            tabela_classificacao = Table(dados_classificacao, colWidths=[80*mm, 40*mm, 40*mm, 40*mm])
+            tabela_classificacao.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#D9D9D9')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
                 ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, 0), 12),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('FONTSIZE', (0, 1), (-1, 1), 10),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#ECF0F1')),
-                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
-                ('FONTSIZE', (0, 1), (-1, -1), 10),
-                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#BDC3C7'))
+                ('TOPPADDING', (0, 1), (-1, 1), 8),
+                ('BOTTOMPADDING', (0, 1), (-1, 1), 8),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
             ]))
             
-            elements.append(tabela_os)
+            elements.append(tabela_classificacao)
             elements.append(Spacer(1, 20))
             
-            # Descrição do Serviço
-            descricao_titulo = Paragraph("DESCRIÇÃO DO SERVIÇO", estilo_subtitulo)
-            elements.append(descricao_titulo)
+            # ========== SOLICITAÇÃO ==========
+            dados_solicitacao = [
+                ["Solicitação", "Solicitante", "Departamento", "Categoria", "Data da solicitação"],
+                [
+                    "Manutenção " + (solicitacao.area if solicitacao.area else ""), 
+                    solicitacao.responsavel if solicitacao.responsavel else "Não informado",
+                    "Manutenção", 
+                    solicitacao.area if solicitacao.area else "Outros",
+                    solicitacao.dt_abertura.strftime('%d/%m/%Y') if solicitacao.dt_abertura else "N/A"
+                ]
+            ]
             
-            descricao_texto = Paragraph(solicitacao.descricao if solicitacao.descricao else "Sem descrição", estilo_normal)
-            elements.append(descricao_texto)
-            elements.append(Spacer(1, 20))
+            tabela_solicitacao = Table(dados_solicitacao, colWidths=[60*mm, 40*mm, 40*mm, 30*mm, 40*mm])
+            tabela_solicitacao.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#D9D9D9')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, 1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('TOPPADDING', (0, 1), (-1, 1), 6),
+                ('BOTTOMPADDING', (0, 1), (-1, 1), 6),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
             
-            # Histórico (se aplicável)
-            if solicitacao.dt_conclusao:
-                historico_titulo = Paragraph("HISTÓRICO", estilo_subtitulo)
-                elements.append(historico_titulo)
-                
-                historico_texto = f"Serviço concluído em {solicitacao.dt_conclusao.strftime('%d/%m/%Y')}"
-                historico_para = Paragraph(historico_texto, estilo_normal)
-                elements.append(historico_para)
-                elements.append(Spacer(1, 20))
+            elements.append(tabela_solicitacao)
+            elements.append(Spacer(1, 15))
             
-            # Rodapé
-            rodape_titulo = Paragraph("INFORMAÇÕES ADICIONAIS", estilo_subtitulo)
-            elements.append(rodape_titulo)
-            
-            rodape_texto = Paragraph(
-                "Este documento foi gerado automaticamente pelo Sistema de Gestão de Manutenção. "
-                "Qualquer dúvida, entre em contato com o setor responsável.",
-                estilo_normal
+            # ========== OCORRÊNCIA ==========
+            estilo_ocorrencia_titulo = ParagraphStyle(
+                'OcorrenciaTitulo',
+                parent=styles['Normal'],
+                fontSize=10,
+                textColor=colors.black,
+                alignment=0,  # Esquerda
+                spaceAfter=5,
+                fontName='Helvetica-Bold'
             )
-            elements.append(rodape_texto)
             
-            # Data de geração
-            data_geracao = Paragraph(
-                f"Documento gerado em: {datetime.now().strftime('%d/%m/%Y às %H:%M')}",
-                ParagraphStyle(
-                    'CustomSmall',
-                    parent=styles['Normal'],
-                    fontSize=8,
-                    textColor=colors.gray,
-                    alignment=2  # Direita
-                )
+            ocorrencia_titulo = Paragraph("Ocorrencia", estilo_ocorrencia_titulo)
+            elements.append(ocorrencia_titulo)
+            
+            # Descrição da ocorrência
+            estilo_ocorrencia_desc = ParagraphStyle(
+                'OcorrenciaDesc',
+                parent=styles['Normal'],
+                fontSize=10,
+                textColor=colors.black,
+                alignment=0,  # Esquerda
+                leftIndent=10,
+                spaceAfter=15,
+                fontName='Helvetica'
             )
-            elements.append(Spacer(1, 30))
-            elements.append(data_geracao)
             
-            # Gerar PDF
+            descricao_formatada = solicitacao.descricao if solicitacao.descricao else "Sem descrição fornecida"
+            ocorrencia_desc = Paragraph(descricao_formatada, estilo_ocorrencia_desc)
+            elements.append(ocorrencia_desc)
+            
+            # ========== TEMPO TRABALHADO ==========
+            dados_tempo = [
+                ["Tempo trabalhado", "Nome", "Data da Execução", "Início", "Termino"],
+                ["", solicitacao.responsavel if solicitacao.responsavel else "", 
+                 solicitacao.dt_conclusao.strftime('%d/%m/%Y') if solicitacao.dt_conclusao else "Pendente", 
+                 "", ""]
+            ]
+            
+            tabela_tempo = Table(dados_tempo, colWidths=[40*mm, 50*mm, 40*mm, 30*mm, 30*mm])
+            tabela_tempo.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#D9D9D9')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, 1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('TOPPADDING', (0, 1), (-1, 1), 6),
+                ('BOTTOMPADDING', (0, 1), (-1, 1), 6),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            
+            elements.append(tabela_tempo)
+            elements.append(Spacer(1, 15))
+            
+            # ========== FORNECEDOR E NOTA FISCAL ==========
+            dados_fornecedor = [
+                ["Fornecedor", "Nº Nota Fiscal", "Valor total", "Data da compra"],
+                ["", "", "", ""]
+            ]
+            
+            tabela_fornecedor = Table(dados_fornecedor, colWidths=[70*mm, 40*mm, 40*mm, 40*mm])
+            tabela_fornecedor.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#D9D9D9')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, 1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+                ('TOPPADDING', (0, 1), (-1, 1), 6),
+                ('BOTTOMPADDING', (0, 1), (-1, 1), 6),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            
+            elements.append(tabela_fornecedor)
+            elements.append(Spacer(1, 15))
+            
+            # ========== OBSERVAÇÕES ==========
+            estilo_obs_titulo = ParagraphStyle(
+                'ObservacoesTitulo',
+                parent=styles['Normal'],
+                fontSize=10,
+                textColor=colors.black,
+                alignment=0,  # Esquerda
+                spaceAfter=5,
+                fontName='Helvetica-Bold'
+            )
+            
+            obs_titulo = Paragraph("Observações", estilo_obs_titulo)
+            elements.append(obs_titulo)
+            
+            estilo_obs_texto = ParagraphStyle(
+                'ObservacoesTexto',
+                parent=styles['Normal'],
+                fontSize=9,
+                textColor=colors.black,
+                alignment=0,  # Esquerda
+                leftIndent=10,
+                spaceAfter=20,
+                fontName='Helvetica'
+            )
+            
+            observacoes_texto = "Serviço de manutenção registrado no sistema. Ordem de serviço gerada automaticamente."
+            if solicitacao.status == "Concluída" and solicitacao.dt_conclusao:
+                observacoes_texto += f" Serviço concluído em {solicitacao.dt_conclusao.strftime('%d/%m/%Y')}."
+            
+            obs_texto = Paragraph(observacoes_texto, estilo_obs_texto)
+            elements.append(obs_texto)
+            
+            # ========== ASSINATURAS ==========
+            estilo_assinatura = ParagraphStyle(
+                'Assinatura',
+                parent=styles['Normal'],
+                fontSize=9,
+                textColor=colors.black,
+                alignment=1,  # Centralizado
+                spaceBefore=30,
+                spaceAfter=5,
+                fontName='Helvetica'
+            )
+            
+            texto_assinatura = "Estou ciente que o serviço solicitado foi executado conforme as observações."
+            assinatura_texto = Paragraph(texto_assinatura, estilo_assinatura)
+            elements.append(assinatura_texto)
+            
+            # Linhas para assinatura
+            dados_assinatura = [
+                ["", ""],
+                ["Solicitante / Responsável", "Técnico"]
+            ]
+            
+            tabela_assinatura = Table(dados_assinatura, colWidths=[90*mm, 90*mm])
+            tabela_assinatura.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('LINEABOVE', (0, 0), (0, 0), 1, colors.black),
+                ('LINEABOVE', (1, 0), (1, 0), 1, colors.black),
+                ('TOPPADDING', (0, 0), (-1, 0), 20),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 5),
+            ]))
+            
+            elements.append(tabela_assinatura)
+            
+            # ========== RODAPÉ ==========
+            estilo_rodape = ParagraphStyle(
+                'Rodape',
+                parent=styles['Normal'],
+                fontSize=8,
+                textColor=colors.gray,
+                alignment=1,  # Centralizado
+                spaceBefore=20,
+                fontName='Helvetica'
+            )
+            
+            rodape_texto = f"Documento gerado automaticamente pelo Sistema de Gestão de Manutenção em {datetime.now().strftime('%d/%m/%Y às %H:%M')}"
+            rodape = Paragraph(rodape_texto, estilo_rodape)
+            elements.append(rodape)
+            
+            # ========== GERAR PDF ==========
             doc.build(elements)
-            print(f"✅ PDF gerado com sucesso: {caminho_arquivo}")
+            print(f"✅ PDF profissional gerado com sucesso: {caminho_arquivo}")
             return caminho_arquivo
             
         except Exception as e:

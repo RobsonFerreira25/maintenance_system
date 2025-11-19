@@ -4,7 +4,7 @@ SERVIÇO DE EMPRESAS - Gerencia tudo relacionado a empresas e filiais
 VERSÃO COM FUNÇÕES DE DELETE
 """
 
-from database.database import get_connection
+from database.database import get_connection, DatabaseConnection
 from database.models import Empresa, Filial, Endereco
 
 class EmpresaService:
@@ -65,34 +65,30 @@ class EmpresaService:
     def deletar_empresa(cnpj):
         """
         Deleta uma empresa pelo CNPJ
-        CORREÇÃO: CNPJ sempre como string
+        VERSÃO CORRIGIDA: Usa context manager
         """
-        conn = get_connection()
-        if conn is None:
-            return False
-        
         try:
             # CORREÇÃO: Garantir que CNPJ seja string
             cnpj_str = str(cnpj).strip()
             
-            cur = conn.cursor()
-            cur.execute("DELETE FROM EMPRESA WHERE CNPJ = %s", (cnpj_str,))
-            conn.commit()
-            
-            if cur.rowcount > 0:
-                print(f"✅ Empresa {cnpj_str} deletada com sucesso!")
-                return True
-            else:
-                print(f"⚠️ Empresa {cnpj_str} não encontrada")
-                return False
+            with DatabaseConnection() as conn:
+                if conn is None:
+                    return False
                 
+                cur = conn.cursor()
+                cur.execute("DELETE FROM EMPRESA WHERE CNPJ = %s", (cnpj_str,))
+                conn.commit()
+                
+                if cur.rowcount > 0:
+                    print(f"✅ Empresa {cnpj_str} deletada com sucesso!")
+                    return True
+                else:
+                    print(f"⚠️ Empresa {cnpj_str} não encontrada")
+                    return False
+                    
         except Exception as e:
             print(f"❌ Erro ao deletar empresa: {e}")
-            conn.rollback()
             return False
-        finally:
-            cur.close()
-            conn.close()
     
     @staticmethod
     def listar_empresas():
@@ -157,13 +153,14 @@ class EmpresaService:
         Deleta uma filial pelo CNPJ
         CORREÇÃO: CNPJ sempre como string
         """
-        conn = get_connection()
-        if conn is None:
-            return False
         
         try:
             # CORREÇÃO: Garantir que CNPJ seja string
             cnpj_ind_str = str(cnpj_ind).strip()
+            
+            with DatabaseConnection as conn:
+                if conn is None:
+                    return False
             
             cur = conn.cursor()
             cur.execute("DELETE FROM FILIAIS WHERE CNPJ_IND_ = %s", (cnpj_ind_str,))
@@ -178,11 +175,8 @@ class EmpresaService:
                 
         except Exception as e:
             print(f"❌ Erro ao deletar filial: {e}")
-            conn.rollback()
             return False
-        finally:
-            cur.close()
-            conn.close()
+        
     
     @staticmethod
     def listar_filiais():

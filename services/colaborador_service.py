@@ -4,7 +4,7 @@ SERVIÇO DE COLABORADORES - Gerencia técnicos e suas habilidades
 VERSÃO CORRIGIDA - Problema de tipagem
 """
 
-from database.database import get_connection
+from database.database import get_connection, DatabaseConnection  # ← ADICIONAR DatabaseConnection
 from database.models import Colaborador
 
 class ColaboradorService:
@@ -14,116 +14,107 @@ class ColaboradorService:
     def criar_colaborador(matricula, nome, cargo):
         """
         Cadastra um novo colaborador
-        CORREÇÃO: Garantir tipo inteiro para matrícula
+        VERSÃO MELHORADA: Usa context manager para conexão
         """
-        conn = get_connection()
-        if conn is None:
-            return False
-        
         try:
             # CORREÇÃO: Garantir que matrícula seja inteiro
             matricula_int = int(matricula)
+        
+            # USANDO CONTEXT MANAGER - conexão fechada automaticamente
+            with DatabaseConnection() as conn:
+                if conn is None:
+                    return False
             
-            cur = conn.cursor()
-            cur.execute(
-                "INSERT INTO COLABORADORES (MATRICULA, NOME, CARGO) VALUES (%s, %s, %s)",
-                (matricula_int, nome, cargo)
-            )
-            conn.commit()
-            print(f"✅ Colaborador {nome} cadastrado com sucesso!")
-            return True
+                cur = conn.cursor()
+                cur.execute(
+                    "INSERT INTO COLABORADORES (MATRICULA, NOME, CARGO) VALUES (%s, %s, %s)",
+                    (matricula_int, nome, cargo)
+                )
+                conn.commit()
+                print(f"✅ Colaborador {nome} cadastrado com sucesso!")
+                return True
             
         except Exception as e:
             print(f"❌ Erro ao criar colaborador: {e}")
-            conn.rollback()
             return False
-        finally:
-            cur.close()
-            conn.close()
     
     @staticmethod
     def deletar_colaborador(matricula):
         """
         Deleta um colaborador pela matrícula
-        CORREÇÃO: Garantir tipo inteiro
+        VERSÃO CORRIGIDA: Melhor tratamento de erros
         """
-        conn = get_connection()
-        if conn is None:
-            return False
-        
         try:
             # CORREÇÃO: Garantir que matrícula seja inteiro
             matricula_int = int(matricula)
             
-            cur = conn.cursor()
-            cur.execute("DELETE FROM COLABORADORES WHERE MATRICULA = %s", (matricula_int,))
-            conn.commit()
-            
-            if cur.rowcount > 0:
-                print(f"✅ Colaborador {matricula_int} deletado com sucesso!")
-                return True
-            else:
-                print(f"⚠️ Colaborador {matricula_int} não encontrado")
-                return False
+            # USANDO CONTEXT MANAGER CORRIGIDO
+            with DatabaseConnection() as conn:
+                if conn is None:
+                    return False
+                
+                cur = conn.cursor()
+                cur.execute("DELETE FROM COLABORADORES WHERE MATRICULA = %s", (matricula_int,))
+                conn.commit()  # Commit dentro do context manager
+                
+                if cur.rowcount > 0:
+                    print(f"✅ Colaborador {matricula_int} deletado com sucesso!")
+                    return True
+                else:
+                    print(f"⚠️ Colaborador {matricula_int} não encontrado")
+                    return False
                 
         except Exception as e:
             print(f"❌ Erro ao deletar colaborador: {e}")
-            conn.rollback()
+            # NÃO PRECISA DE rollback - o context manager cuida disso
             return False
-        finally:
-            cur.close()
-            conn.close()
+        
     
     @staticmethod
     def listar_colaboradores():
         """
         Lista todos os colaboradores
+        VERSÃO MELHORADA: Conexão automática
         """
-        conn = get_connection()
-        if conn is None:
-            return []
-        
         try:
-            cur = conn.cursor()
-            cur.execute("SELECT MATRICULA, NOME, CARGO FROM COLABORADORES ORDER BY NOME")
+            with DatabaseConnection() as conn:
+                if conn is None:
+                    return []
             
-            colaboradores = []
-            for matricula, nome, cargo in cur.fetchall():
-                colaboradores.append(Colaborador(matricula, nome, cargo))
+                cur = conn.cursor()
+                cur.execute("SELECT MATRICULA, NOME, CARGO FROM COLABORADORES ORDER BY NOME")
             
-            return colaboradores
+                colaboradores = []
+                for matricula, nome, cargo in cur.fetchall():
+                    colaboradores.append(Colaborador(matricula, nome, cargo))
+            
+                return colaboradores
             
         except Exception as e:
             print(f"❌ Erro ao listar colaboradores: {e}")
             return []
-        finally:
-            cur.close()
-            conn.close()
     
     @staticmethod
     def listar_nomes_colaboradores():
         """
         Retorna apenas os nomes dos colaboradores
-        Para usar no combobox de responsáveis
+        VERSÃO MELHORADA: Mais simples e segura
         """
-        conn = get_connection()
-        if conn is None:
-            return []
-        
         try:
-            cur = conn.cursor()
-            cur.execute("SELECT NOME FROM COLABORADORES ORDER BY NOME")
-            
-            # Retorna lista simples com apenas os nomes
-            nomes = [row[0] for row in cur.fetchall()]
-            return nomes
-            
+            with DatabaseConnection() as conn:
+                if conn is None:
+                    return []
+                
+                cur = conn.cursor()
+                cur.execute("SELECT NOME FROM COLABORADORES ORDER BY NOME")
+                
+                # Retorna lista simples com apenas os nomes
+                nomes = [row[0] for row in cur.fetchall()]
+                return nomes
+                
         except Exception as e:
             print(f"❌ Erro ao listar nomes de colaboradores: {e}")
             return []
-        finally:
-            cur.close()
-            conn.close()
     
     @staticmethod
     def buscar_colaborador_por_nome(nome):

@@ -25,7 +25,7 @@ def main():
     Função principal do sistema
     """
     print("🔧 Iniciando Sistema de Gestão de Manutenção...")
-    print("📊 Desenvolvido por: O Arquiteto")
+    print("📊 Desenvolvido por: Robson Ferreira")
     print("=" * 50)
     
     # Verificar dependências
