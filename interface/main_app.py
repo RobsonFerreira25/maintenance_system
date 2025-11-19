@@ -1,7 +1,7 @@
-# 📄 interface/main_app.py (VERSÃO MELHORADA)
+# 📄 interface/main_app.py (VERSÃO COMPLETA E CORRIGIDA)
 """
 INTERFACE PRINCIPAL - Sistema de Gestão de Manutenção
-VERSÃO COM MELHORIAS NA ABA DE SOLICITAÇÕES
+VERSÃO COMPLETA COM TODOS OS MÉTODOS
 """
 
 import tkinter as tk
@@ -12,6 +12,7 @@ from datetime import datetime
 from services.empresa_service import EmpresaService, EnderecoService
 from services.colaborador_service import ColaboradorService
 from services.solicitacao_service import SolicitacaoService
+from utils.pdf_generator import gerar_e_abrir_os_pdf
 
 class SistemaManutencaoApp:
     """Classe principal da interface gráfica"""
@@ -48,6 +49,7 @@ class SistemaManutencaoApp:
         style.configure('Delete.TButton', background='#E74C3C', foreground='white')
         style.configure('Success.TButton', background='#2ECC71', foreground='white')
         style.configure('Warning.TButton', background='#F39C12', foreground='white')
+        style.configure('PDF.TButton', background='#9B59B6', foreground='white')
         style.configure('Header.TLabel', font=('Arial', 12, 'bold'))
     
     def criar_menu_superior(self):
@@ -101,7 +103,7 @@ class SistemaManutencaoApp:
         self.criar_aba_dashboard()
     
     def criar_aba_empresas(self):
-        """Cria a aba de gestão de empresas e filiais COM LISTAGEM DE FILIAIS"""
+        """Cria a aba de gestão de empresas e filiais"""
         frame_empresas = ttk.Frame(self.notebook)
         self.notebook.add(frame_empresas, text="🏢 Empresas & Filiais")
         
@@ -292,30 +294,35 @@ class SistemaManutencaoApp:
         self.notebook.add(frame_solicitacoes, text="📋 Solicitações")
         
         # Frame de cadastro
-        frame_cadastro = ttk.LabelFrame(frame_solicitacoes, text="Nova Solicitação", padding=10)
+        frame_cadastro = ttk.LabelFrame(frame_solicitacoes, text="Nova Solicitação (Número Automático)", padding=10)
         frame_cadastro.pack(fill='x', padx=10, pady=5)
         
-        # Linha 1: Número e Área
-        ttk.Label(frame_cadastro, text="Nº Solicitação:").grid(row=0, column=0, sticky='w', pady=2)
-        self.entry_num_solic = ttk.Entry(frame_cadastro, width=15)
-        self.entry_num_solic.grid(row=0, column=1, pady=2, padx=5)
+        # NOVO: Label mostrando o próximo número
+        self.label_proximo_numero = ttk.Label(
+            frame_cadastro,
+            text="Próximo Nº: Carregando...",
+            font=('Arial', 10, 'bold'),
+            foreground='#2ECC71'
+        )
+        self.label_proximo_numero.grid(row=0, column=0, columnspan=4, pady=5)
         
-        ttk.Label(frame_cadastro, text="Área:").grid(row=0, column=2, sticky='w', pady=2, padx=(20,5))
+        # Linha 1: Área
+        ttk.Label(frame_cadastro, text="Área:*").grid(row=1, column=0, sticky='w', pady=2)
         self.combo_area = ttk.Combobox(frame_cadastro, width=20, values=['Elétrica', 'Hidráulica', 'Civil', 'Serviços Gerais'])
-        self.combo_area.grid(row=0, column=3, pady=2, padx=5)
+        self.combo_area.grid(row=1, column=1, pady=2, padx=5)
         
         # Linha 2: Responsável e Filial
-        ttk.Label(frame_cadastro, text="Responsável:").grid(row=1, column=0, sticky='w', pady=2)
+        ttk.Label(frame_cadastro, text="Responsável:*").grid(row=2, column=0, sticky='w', pady=2)
         self.combo_responsavel = ttk.Combobox(frame_cadastro, width=20)
-        self.combo_responsavel.grid(row=1, column=1, pady=2, padx=5)
+        self.combo_responsavel.grid(row=2, column=1, pady=2, padx=5)
         
-        ttk.Label(frame_cadastro, text="Filial:").grid(row=1, column=2, sticky='w', pady=2, padx=(20,5))
+        ttk.Label(frame_cadastro, text="Filial:").grid(row=2, column=2, sticky='w', pady=2, padx=(20,5))
         self.combo_filial = ttk.Combobox(frame_cadastro, width=20)
-        self.combo_filial.grid(row=1, column=3, pady=2, padx=5)
+        self.combo_filial.grid(row=2, column=3, pady=2, padx=5)
         
         # Botões para atualizar listas
         frame_botoes_listas = ttk.Frame(frame_cadastro)
-        frame_botoes_listas.grid(row=2, column=0, columnspan=4, pady=5)
+        frame_botoes_listas.grid(row=3, column=0, columnspan=4, pady=5)
         
         btn_atualizar_resp = ttk.Button(
             frame_botoes_listas,
@@ -333,24 +340,24 @@ class SistemaManutencaoApp:
         )
         btn_atualizar_filiais.pack(side='left', padx=5)
         
-        # Linha 3: Descrição
-        ttk.Label(frame_cadastro, text="Descrição:").grid(row=3, column=0, sticky='nw', pady=2)
+        # Linha 4: Descrição
+        ttk.Label(frame_cadastro, text="Descrição:*").grid(row=4, column=0, sticky='nw', pady=2)
         self.text_descricao = scrolledtext.ScrolledText(frame_cadastro, width=50, height=4)
-        self.text_descricao.grid(row=3, column=1, columnspan=3, pady=2, padx=5, sticky='we')
+        self.text_descricao.grid(row=4, column=1, columnspan=3, pady=2, padx=5, sticky='we')
         
-        # Linha 4: Botão criar
+        # Linha 5: Botão criar
         btn_criar_solic = ttk.Button(
             frame_cadastro,
-            text="📝 Criar Solicitação",
-            command=self.criar_solicitacao
+            text="📝 Criar Solicitação Automática",
+            command=self.criar_solicitacao_automatica
         )
-        btn_criar_solic.grid(row=4, column=0, columnspan=4, pady=10)
+        btn_criar_solic.grid(row=5, column=0, columnspan=4, pady=10)
         
         # Frame de listagem e controle
         frame_controle = ttk.LabelFrame(frame_solicitacoes, text="Controle de Solicitações", padding=10)
         frame_controle.pack(fill='both', expand=True, padx=10, pady=5)
         
-        # Treeview para solicitações - COLUNAS MELHORADAS
+        # Treeview para solicitações
         colunas = ('Nº', 'Data Abertura', 'Data Conclusão', 'Área', 'Status', 'Responsável', 'Filial', 'Descrição')
         self.tree_solicitacoes = ttk.Treeview(frame_controle, columns=colunas, show='headings', height=10)
         
@@ -361,7 +368,7 @@ class SistemaManutencaoApp:
         
         self.tree_solicitacoes.pack(fill='both', expand=True)
         
-        # Frame de botões para controle - MAIS BOTÕES DE STATUS
+        # Frame de botões para controle - COM BOTÃO PDF
         frame_botoes = ttk.Frame(frame_controle)
         frame_botoes.pack(fill='x', pady=5)
         
@@ -405,6 +412,15 @@ class SistemaManutencaoApp:
         )
         btn_status_cancelada.pack(side='left', padx=2)
         
+        # NOVO: Botão para gerar PDF
+        btn_gerar_pdf = ttk.Button(
+            frame_botoes,
+            text="📄 Gerar PDF",
+            command=self.gerar_pdf_solicitacao,
+            style='PDF.TButton'
+        )
+        btn_gerar_pdf.pack(side='left', padx=2)
+        
         btn_deletar_solic = ttk.Button(
             frame_botoes,
             text="🗑️ Deletar",
@@ -414,7 +430,7 @@ class SistemaManutencaoApp:
         btn_deletar_solic.pack(side='left', padx=2)
     
     def criar_aba_dashboard(self):
-        """Cria a aba de dashboard com resumo do sistema - VERSÃO MELHORADA"""
+        """Cria a aba de dashboard com resumo do sistema"""
         frame_dashboard = ttk.Frame(self.notebook)
         self.notebook.add(frame_dashboard, text="📊 Dashboard")
         
@@ -519,8 +535,18 @@ class SistemaManutencaoApp:
         self.carregar_colaboradores()
         self.carregar_solicitacoes()
         self.carregar_responsaveis()
-        self.carregar_filiais_combobox()  # NOVO: Carrega filiais no combobox
+        self.carregar_filiais_combobox()
+        self.atualizar_proximo_numero()
         self.atualizar_dashboard()
+    
+    def atualizar_proximo_numero(self):
+        """Atualiza o label com o próximo número de OS"""
+        try:
+            proximo_numero = SolicitacaoService.obter_proximo_numero_os()
+            self.label_proximo_numero.config(text=f"Próximo Nº: {proximo_numero}")
+        except Exception as e:
+            print(f"❌ Erro ao obter próximo número: {e}")
+            self.label_proximo_numero.config(text="Próximo Nº: Erro")
     
     def carregar_responsaveis(self):
         """Carrega a lista de colaboradores no combobox de responsáveis"""
@@ -540,7 +566,7 @@ class SistemaManutencaoApp:
             messagebox.showwarning("Atenção", "Erro ao carregar lista de responsáveis")
     
     def carregar_filiais_combobox(self):
-        """NOVO: Carrega a lista de filiais no combobox"""
+        """Carrega a lista de filiais no combobox"""
         try:
             filiais = EmpresaService.listar_filiais()
             nomes_filiais = [filial.nome for filial in filiais]
@@ -587,7 +613,7 @@ class SistemaManutencaoApp:
             self.entry_cnpj_filial.delete(0, tk.END)
             self.entry_nome_filial.delete(0, tk.END)
             self.carregar_filiais()
-            self.carregar_filiais_combobox()  # NOVO: Atualiza combobox
+            self.carregar_filiais_combobox()
             self.atualizar_dashboard()
     
     def cadastrar_colaborador(self):
@@ -612,16 +638,15 @@ class SistemaManutencaoApp:
         except ValueError:
             messagebox.showerror("Erro", "Matrícula deve ser um número!")
     
-    def criar_solicitacao(self):
-        """Cria uma nova solicitação - VERSÃO MELHORADA"""
+    def criar_solicitacao_automatica(self):
+        """Cria solicitação com número automático"""
         try:
-            n_solicitacao = int(self.entry_num_solic.get().strip())
             area = self.combo_area.get().strip()
             responsavel = self.combo_responsavel.get().strip()
             filial_nome = self.combo_filial.get().strip()
             descricao = self.text_descricao.get('1.0', tk.END).strip()
             
-            if not all([n_solicitacao, area, responsavel, descricao]):
+            if not all([area, responsavel, descricao]):
                 messagebox.showwarning("Atenção", "Por favor, preencha todos os campos obrigatórios!")
                 return
             
@@ -640,18 +665,55 @@ class SistemaManutencaoApp:
                         filial_cnpj = filial.cnpj_ind
                         break
             
-            if SolicitacaoService.criar_solicitacao(n_solicitacao, area, responsavel, descricao, filial_cnpj):
-                self.entry_num_solic.delete(0, tk.END)
+            # Criar solicitação com número automático
+            numero_os = SolicitacaoService.criar_solicitacao_automatica(area, responsavel, descricao, filial_cnpj)
+            
+            if numero_os:
+                messagebox.showinfo("Sucesso", f"Solicitação #{numero_os} criada com sucesso!")
+                
+                # Limpar campos
                 self.combo_area.set('')
                 self.combo_responsavel.set('')
                 self.combo_filial.set('')
                 self.text_descricao.delete('1.0', tk.END)
+                
+                # Atualizar interface
                 self.carregar_solicitacoes()
+                self.atualizar_proximo_numero()
                 self.atualizar_dashboard()
                 
-        except ValueError:
-            messagebox.showerror("Erro", "Número da solicitação deve ser um número!")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao criar solicitação: {e}")
+            
     
+    # ========== MÉTODOS DE PDF ==========
+    
+    def gerar_pdf_solicitacao(self):
+        """NOVO: Gera PDF da solicitação selecionada"""
+        selecionado = self.tree_solicitacoes.selection()
+        if not selecionado:
+            messagebox.showwarning("Atenção", "Por favor, selecione uma solicitação para gerar o PDF!")
+            return
+        
+        item = selecionado[0]
+        n_solicitacao = self.tree_solicitacoes.item(item)['values'][0]
+        
+        try:
+            # Buscar dados completos da solicitação
+            solicitacao = SolicitacaoService.buscar_solicitacao_por_numero(n_solicitacao)
+            
+            if solicitacao:
+                # Gerar e abrir PDF
+                if gerar_e_abrir_os_pdf(solicitacao):
+                    messagebox.showinfo("Sucesso", f"PDF da OS #{n_solicitacao} gerado com sucesso!")
+                else:
+                    messagebox.showerror("Erro", "Não foi possível gerar o PDF")
+            else:
+                messagebox.showerror("Erro", "Solicitação não encontrada")
+                
+        except Exception as e:
+            messagebox.showerror("Erro", f"Erro ao gerar PDF: {e}")        
+            
     # ========== MÉTODOS DE CARREGAMENTO ==========
     
     def carregar_empresas(self):

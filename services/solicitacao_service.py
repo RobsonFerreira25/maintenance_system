@@ -1,7 +1,7 @@
-# 📄 services/solicitacao_service.py (VERSÃO SIMPLIFICADA)
+# 📄 services/solicitacao_service.py (VERSÃO COM NÚMERO AUTOMÁTICO)
 """
 SERVIÇO DE SOLICITAÇÕES - O coração do sistema de manutenção
-VERSÃO SIMPLIFICADA sem usar tabela FAZ por enquanto
+VERSÃO COM NÚMERO AUTOMÁTICO E FUNÇÕES DE RELATÓRIO
 """
 
 from database.database import get_connection
@@ -12,10 +12,43 @@ class SolicitacaoService:
     """Serviço para gerenciar solicitações de manutenção"""
     
     @staticmethod
+    def obter_proximo_numero_os():
+        """
+        NOVO: Obtém o próximo número de OS automaticamente
+        """
+        conn = get_connection()
+        if conn is None:
+            return 1  # Retorna 1 se não conseguir conectar
+        
+        try:
+            cur = conn.cursor()
+            cur.execute("SELECT MAX(N_SOLICITACAO) FROM SOLICITACAO")
+            resultado = cur.fetchone()
+            
+            if resultado[0] is None:
+                return 1  # Primeira OS
+            else:
+                return resultado[0] + 1  # Próximo número
+                
+        except Exception as e:
+            print(f"❌ Erro ao obter próximo número: {e}")
+            return 1
+        finally:
+            cur.close()
+            conn.close()
+    
+    @staticmethod
+    def criar_solicitacao_automatica(area, responsavel, descricao, filial=None, status="Aberta"):
+        """
+        NOVO: Cria solicitação com número automático
+        """
+        n_solicitacao = SolicitacaoService.obter_proximo_numero_os()
+        return SolicitacaoService.criar_solicitacao(n_solicitacao, area, responsavel, descricao, filial, status)
+    
+    @staticmethod
     def criar_solicitacao(n_solicitacao, area, responsavel, descricao, filial=None, status="Aberta"):
         """
         Cria uma nova solicitação de manutenção
-        VERSÃO SIMPLIFICADA: Usa apenas campo FILIAL na tabela SOLICITACAO
         """
         conn = get_connection()
         if conn is None:
@@ -36,7 +69,7 @@ class SolicitacaoService:
             
             conn.commit()
             print(f"✅ Solicitação #{n_solicitacao_int} criada com sucesso!")
-            return True
+            return n_solicitacao_int  # Retorna o número da OS criada
             
         except Exception as e:
             print(f"❌ Erro ao criar solicitação: {e}")
@@ -44,8 +77,8 @@ class SolicitacaoService:
             return False
         finally:
             cur.close()
-            conn.close()
-    
+            conn.close()    
+            
     @staticmethod
     def deletar_solicitacao(n_solicitacao):
         """
