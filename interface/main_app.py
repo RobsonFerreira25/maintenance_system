@@ -13,6 +13,7 @@ from services.empresa_service import EmpresaService, EnderecoService
 from services.colaborador_service import ColaboradorService
 from services.solicitacao_service import SolicitacaoService
 from utils.pdf_generator import gerar_e_abrir_os_pdf
+from utils.validators import Validators  # ← NOVO IMPORT
 
 class SistemaManutencaoApp:
     """Classe principal da interface gráfica"""
@@ -586,12 +587,21 @@ class SistemaManutencaoApp:
     # ========== MÉTODOS DE CADASTRO ==========
     
     def cadastrar_empresa(self):
-        """Cadastra uma nova empresa"""
+        """Cadastra uma nova empresa COM VALIDAÇÕES"""
         cnpj = self.entry_cnpj.get().strip()
         razao_social = self.entry_razao_social.get().strip()
         
+        # VALIDAÇÕES
         if not cnpj or not razao_social:
             messagebox.showwarning("Atenção", "Por favor, preencha todos os campos!")
+            return
+        
+        if not Validators.validar_cnpj(cnpj):
+            messagebox.showerror("Erro", "CNPJ inválido! Deve conter 14 dígitos.")
+            return
+        
+        if not Validators.validar_texto(razao_social, 150, 5):
+            messagebox.showerror("Erro", "Razão Social deve ter entre 5 e 150 caracteres!")
             return
         
         if EmpresaService.criar_empresa(cnpj, razao_social):
@@ -639,15 +649,17 @@ class SistemaManutencaoApp:
             messagebox.showerror("Erro", "Matrícula deve ser um número!")
     
     def criar_solicitacao_automatica(self):
-        """Cria solicitação com número automático"""
+        """Cria solicitação com número automático E VALIDAÇÕES"""
         try:
             area = self.combo_area.get().strip()
             responsavel = self.combo_responsavel.get().strip()
             filial_nome = self.combo_filial.get().strip()
             descricao = self.text_descricao.get('1.0', tk.END).strip()
             
-            if not all([area, responsavel, descricao]):
-                messagebox.showwarning("Atenção", "Por favor, preencha todos os campos obrigatórios!")
+            # VALIDAÇÕES ROBUSTAS
+            errors = Validators.validar_solicitacao_dados(area, responsavel, descricao)
+            if errors:
+                messagebox.showerror("Erro de Validação", "\n".join(errors))
                 return
             
             # Verifica se o responsável existe na lista
